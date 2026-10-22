@@ -1,0 +1,8 @@
+{
+  "name": "restaurant-planning-system",
+  "private": true,
+  "version": "1.0.0",
+  "description": "CSEN 403 Prolog and Haskell milestones with an interactive portfolio demo",
+  "scripts": {"test": "node --test tests/model.test.mjs && node tests/prolog.test.cjs"},
+  "devDependencies": {"swipl-wasm": "8.1.4"}
+}

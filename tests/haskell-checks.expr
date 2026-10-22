@@ -1,0 +1,13 @@
+if and [
+  calculateDeliveryDates (10,Feb,2026) [SimpleIngredient "rice",SimpleIngredient "apples",Recipe "dough" [SimpleIngredient "flour",SimpleIngredient "eggs"],SimpleIngredient "apples"] == [((21,Jan,2026),("rice",1.2)),((5,Feb,2026),("apples",5)),((9,Feb,2026),("flour",0.5)),((9,Feb,2026),("eggs",2)),((5,Feb,2026),("apples",5))],
+  calculateDeliveryDates (10,Jan,2026) [SimpleIngredient "rice"] == [((21,Dec,2025),("rice",1.2))],
+  calculateDeliveryDates (1,Mar,2024) [SimpleIngredient "apples"] == [((25,Feb,2024),("apples",5))],
+  summarizeAllDeliveries [(15,Feb,2026),(17,Feb,2026)] == [((26,Jan,2026),[("rice",1,1.2)]),((10,Feb,2026),[("sugar",1,6)]),((14,Feb,2026),[("butter",1,12),("eggs",1,2),("flour",1,0.5)]),((16,Feb,2026),[("eggs",1,2),("flour",3,1.5)])],
+  getDeliveryExpenses [((26,Jan,2026),[("rice",1,1.2)])] == Category "Food Supplies" [Item "rice" 1.2 (26,Jan,2026)],
+  mostPopularDish ["rice","soup","cake","rice"] == ["rice"],
+  null (mostPopularDish []),
+  length (mostPopularDish ["rice","cake","rice","cake"]) == 2,
+  abs (calculateTotalExpenses (Category "Restaurant Expenses" [Category "Food Supplies" [Item "Vegetables" 450.5 (12,Jan,2026),Item "Meat" 890 (13,Jan,2026)],Category "Salaries" [Item "Chef" 3500 (1,Jan,2026),Item "Waiter" 2000 (1,Jan,2026)]]) - 6840.5) < 0.001,
+  countCategoryItems "Salaries" (Category "Restaurant Expenses" [Category "Salaries" [Category "Kitchen" [Item "Chef" 3500 (1,Jan,2026)],Category "Service" [Item "Waiter" 2000 (1,Jan,2026),Item "Waiter" 2100 (3,Jan,2026)]]]) == 3,
+  countCategoryItems "Missing" (Item "rice" 1.2 (1,Jan,2026)) == 0
+] then putStrLn "11 original Haskell reference checks passed." else error "Original Haskell reference check failed."

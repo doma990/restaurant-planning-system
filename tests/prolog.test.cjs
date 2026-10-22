@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const SWIPL=require('swipl-wasm');
+(async()=>{
+ const {runPlanner}=await import('../demo/prolog.mjs');const {defaultConfig}=await import('../demo/model.mjs');
+ const swipl=await SWIPL({arguments:['-q'],print:()=>{},printErr:()=>{}});
+ swipl.FS.writeFile('/project.pl',fs.readFileSync(path.join(__dirname,'../prolog/48.pl'),'utf8'));
+ assert.equal(swipl.prolog.query("consult('/project.pl').").once().success,true);
+ let count=0;const check=(label,f)=>{f();count++;console.log('PASS',label);};
+ const config=defaultConfig(),result=runPlanner(swipl,config);
+ check('every group has exactly one reservation',()=>{assert.equal(result.feasible,true);assert.equal(result.rows.length,config.groups.length);assert.equal(new Set(result.rows.map(r=>r.group)).size,config.groups.length);});
+ check('capacities and time preferences are satisfied',()=>{for(const r of result.rows){const g=config.groups.find(g=>g.name===r.group),t=config.tables.find(t=>t.name===r.table);assert.ok(t.capacity>=g.size);assert.equal(r.time,g.time);}});
+ check('tables are never double booked',()=>assert.equal(new Set(result.rows.map(r=>[r.day,r.month,r.time,r.table].join('|'))).size,result.rows.length));
+ check('staff limits are satisfied',()=>{for(const day of config.days)for(const time of ['morning','evening'])assert.ok(result.rows.filter(r=>r.day===+day.date.slice(8)&&r.month===+day.date.slice(5,7)&&r.time===time).length<=day.staff);});
+ check('original CSV writers run',()=>{assert.ok(result.reservationsCSV.startsWith('Day,Month,Time,Group,Table\n'));assert.ok(result.shoppingCSV.startsWith('Day,Month,Ingredients\n'));assert.equal(result.reservationsCSV.trim().split('\n').length,5);});
+ check('ingredient repetitions survive grouping',()=>assert.equal(result.ingredients.find(x=>x.day===17).items.filter(x=>x==='salt').length,2));
+ const impossible=defaultConfig();impossible.tables.forEach(t=>t.capacity=1);
+ check('impossible capacity produces no schedule',()=>assert.equal(runPlanner(swipl,impossible).feasible,false));
+ const noStaff=defaultConfig();noStaff.days.forEach(d=>d.staff=0);
+ check('zero staff produces no schedule',()=>assert.equal(runPlanner(swipl,noStaff).feasible,false));
+ check('repeated runs replace the knowledge base',()=>assert.equal(runPlanner(swipl,config).rows.length,4));
+ check('browser copy is byte-for-byte the submitted source',()=>assert.equal(fs.readFileSync(path.join(__dirname,'../demo/original/48.pl'),'utf8'),fs.readFileSync(path.join(__dirname,'../prolog/48.pl'),'utf8')));
+ console.log(`${count} Prolog integration checks passed.`);
+})().catch(error=>{console.error(error);process.exitCode=1;});
